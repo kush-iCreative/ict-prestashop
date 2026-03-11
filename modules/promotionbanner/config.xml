@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<module>
+    <name>promotionbanner</name>
+    <displayName><![CDATA[Promotion Banner]]></displayName>
+    <version><![CDATA[1.0]]></version>
+    <description><![CDATA[Category promotional banner module]]></description>
+    <author><![CDATA[Kush]]></author>
+    <tab><![CDATA[front_office_features]]></tab>
+    <is_configurable>1</is_configurable>
+    <need_instance>1</need_instance>
+</module>
