@@ -3,7 +3,6 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-// Ensure the class file exists
 require_once dirname(__FILE__) . '/classes/PromotionBannerClass.php';
 
 class PromotionBanner extends Module
@@ -12,7 +11,7 @@ class PromotionBanner extends Module
     {
         $this->name = 'promotionbanner';
         $this->version = '1.0';
-        $this->author = 'Kush';
+        $this->author = 'iCreative';
         $this->bootstrap = true;
         $this->tab = 'front_office_features';
 
@@ -28,7 +27,22 @@ class PromotionBanner extends Module
         return parent::install()
             && $this->registerHook('displayHome')
             && $this->registerHook('displayWrapperTop')
-            &&    $this->createTable();
+            && $this->registerHook('displayHeader')
+            && $this->createTable();
+    }
+    public function uninstall()
+    {
+        if (!parent::uninstall()) {
+            return false;
+        }
+
+        $sql = 'DROP TABLE IF EXISTS `' . _DB_PREFIX_ . 'promotion_banner`';
+
+        if (!Db::getInstance()->execute($sql)) {
+            return false;
+        }
+
+        return true;
     }
 
     private function createTable()
@@ -47,12 +61,21 @@ class PromotionBanner extends Module
 
         return Db::getInstance()->execute($sql);
     }
+    public function hookDisplayHeader(array $params)
+    {
+
+        $context    = Context::getContext();
+        $controller = $context->controller;
+
+        $controller->addCSS(_MODULE_DIR_ . $this->name . '/views/css/style.css');
+        $controller->addJS(_MODULE_DIR_ . $this->name . '/views/js/script.js');
+    }
+
 
     public function getContent()
     {
         $output = '';
 
-        // ONLY save if the specific submit button was clicked
         if (Tools::isSubmit('submitBanner')) {
             if ($this->saveBanner()) {
                 $output .= $this->displayConfirmation($this->l('Banner saved successfully.'));
@@ -60,9 +83,20 @@ class PromotionBanner extends Module
                 $output .= $this->displayError($this->l('Error saving banner.'));
             }
         }
+        if (Tools::isSubmit('deletepromotion_banner')) {
+            $id_banner = (int)Tools::getValue('id_banner');
+            // dd($id_banner);
+            if ($id_banner > 0) {
+                $res = Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'promotion_banner` WHERE `id_banner` = ' . $id_banner);
 
-        // Determine which view to show
-        if (Tools::isSubmit('addbanner') || Tools::isSubmit('updatepromotion_banner')) {
+                if ($res) {
+                    $output .=  $this->displayConfirmation($this->l('Banner deleted successfully.'));
+                } else {
+                    $output .=   $this->displayError($this->l('An error occurred while deleting the banner.'));
+                }
+            }
+        }
+        if (Tools::isSubmit('addbanner') || Tools::isSubmit('updatepromotion_banner') || Tools::isSubmit('deletepromotion_banner')) {
             return $output . $this->renderForm();
         }
 
@@ -86,7 +120,7 @@ class PromotionBanner extends Module
         $helper->actions = ['edit', 'delete'];
         $helper->show_toolbar = true;
         $helper->title = $this->l('Promotion Banners');
-        $helper->table = 'promotion_banner'; // This affects the 'update' submit name
+        $helper->table = 'promotion_banner';
         $helper->token = Tools::getAdminTokenLite('AdminModules');
         $helper->currentIndex = AdminController::$currentIndex . '&configure=' . $this->name;
 
@@ -98,16 +132,12 @@ class PromotionBanner extends Module
 
         return $helper->generateList($results, $fields_list);
     }
-
     private function saveBanner()
     {
-        // 1. Initialize Object
         $id = (int)Tools::getValue('id_banner');
         $banner = new PromotionBannerClass($id);
 
-        // 2. Assign Standard Fields
         $banner->title = Tools::getValue('title');
-        // Use true as the second parameter for Tools::getValue to allow HTML for the description
         $banner->description = Tools::getValue('description', true);
         $banner->cta_link = Tools::getValue('cta_link');
         $banner->category_id = (int)Tools::getValue('category_id');
@@ -115,22 +145,18 @@ class PromotionBanner extends Module
         $banner->end_date = Tools::getValue('end_date');
         $banner->status = (int)Tools::getValue('status');
 
-        // 3. Handle Multiple Image Uploads
         $imageNames = [];
 
-        // Load existing images if they exist (for editing)
+        // Load existing images if they exist
         if (!empty($banner->image)) {
             $imageNames = json_decode($banner->image, true) ?: [];
         }
 
-        // Check if new images are being uploaded
-        // Note: Use 'image' as the key because HelperForm creates names without brackets for multiple files
         if (isset($_FILES['image']) && !empty($_FILES['image']['tmp_name'][0])) {
             $targetDir = _PS_MODULE_DIR_ . $this->name . '/views/img/';
 
             foreach ($_FILES['image']['tmp_name'] as $key => $tmpName) {
                 if ($_FILES['image']['error'][$key] === UPLOAD_ERR_OK) {
-                    // Secure filename: Sanitize and add unique ID to prevent overwriting
                     $extension = pathinfo($_FILES['image']['name'][$key], PATHINFO_EXTENSION);
                     $cleanName = Tools::str2url(pathinfo($_FILES['image']['name'][$key], PATHINFO_FILENAME));
                     $finalName = time() . '_' . uniqid() . '_' . $cleanName . '.' . $extension;
@@ -140,15 +166,12 @@ class PromotionBanner extends Module
                     }
                 }
             }
-            // Update the image field with the new combined list
+            // Update the image field
             $banner->image = json_encode($imageNames);
         }
 
-        // 4. Persistence
-        // save() automatically determines whether to use add() or update() based on the ID
         return $banner->save();
     }
-
 
     private function renderForm()
     {
@@ -163,6 +186,7 @@ class PromotionBanner extends Module
         if ($id_banner) {
             $banner_data = Db::getInstance()->getRow('SELECT * FROM ' . _DB_PREFIX_ . 'promotion_banner WHERE id_banner = ' . $id_banner);
         }
+        //image show
         $image_list_html = '';
         if (isset($banner_data['image']) && !empty($banner_data['image'])) {
             $images = json_decode($banner_data['image'], true);
@@ -226,7 +250,7 @@ class PromotionBanner extends Module
     }
     private function getBannersByCategory($id_category = 0)
     {
-        // If $id_category is 0, we treat it as Home/Global
+        // If $id_category is 0 show Home/Global
         $sql = 'SELECT * FROM ' . _DB_PREFIX_ . 'promotion_banner 
             WHERE status = 1 
              AND (start_date <= NOW() OR start_date = "0000-00-00 00:00:00" OR start_date IS NULL) 
@@ -235,7 +259,6 @@ class PromotionBanner extends Module
             ORDER BY id_banner DESC';
 
         $banners = Db::getInstance()->executeS($sql);
-
         if ($banners) {
             foreach ($banners as &$banner) {
                 $banner['image'] = json_decode($banner['image'], true);
@@ -243,23 +266,24 @@ class PromotionBanner extends Module
         }
         return $banners;
     }
-    // public function hookDisplayHome($params)
-    // {
-    //     // Assuming category_id 2 is usually "Home" in PrestaShop
-    //     $banners = $this->getBannersByCategory(2);
+    public function hookDisplayHome($params)
+    {
+        // $id_category = (int)Tools::getValue('id_category');
+        $id_category = (int)Tools::getValue('id_category', 2);
+        // dd($id_category); die();
 
-    //     $this->context->smarty->assign([
-    //         'banners' => $banners,
-    //         'banner_img_path' => $this->context->link->getBaseLink() . 'modules/' . $this->name . '/views/img/'
-    //     ]);
+        $banners = $this->getBannersByCategory($id_category);
 
-    //     return $this->display(__FILE__, 'views/templates/hook/banner.tpl');
-    // }
+        $this->context->smarty->assign([
+            'banners' => $banners,
+            'banner_img_path' => $this->context->link->getBaseLink() . 'modules/' . $this->name . '/views/img/'
+        ]);
 
-    // Hook for Category Pages
+        return $this->display(__FILE__, 'views/templates/hook/banner.tpl');
+    }
+
     public function hookDisplayWrapperTop($params)
     {
-        // Detect if we are on a category page
         if ($this->context->controller->php_self == 'category') {
             $id_category = (int)Tools::getValue('id_category');
             $banners = $this->getBannersByCategory($id_category);
@@ -274,25 +298,4 @@ class PromotionBanner extends Module
         }
         return false;
     }
-
-    /*  public function hookDisplayBanner($params)
-    {
-        $sql = 'SELECT * FROM ' . _DB_PREFIX_ . 'promotion_banner WHERE status = 1 ORDER BY id_banner DESC';
-        $banners = Db::getInstance()->executeS($sql);
-
-        // Decode the JSON image strings into arrays for Smarty
-        if ($banners) {
-            foreach ($banners as &$banner) {
-                $banner['image'] = json_decode($banner['image'], true);
-            }
-        }
-
-        $this->context->smarty->assign([
-            'banners' => $banners,
-            'banner_img_path' => $this->context->link->getBaseLink() . 'modules/' . $this->name . '/views/img/'
-        ]);
-
-        return $this->display(__FILE__, 'views/templates/hook/banner.tpl');
-    }
-        */
 }
