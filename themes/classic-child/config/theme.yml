@@ -1,0 +1,48 @@
+parent: classic
+name: classic-child
+display_name: child theme for customize theme
+version: 1.0.0
+
+assets:
+  use_parent_assets: true
+  css:
+    all:
+      - id: custom-style
+        path: assets/css/custom.css
+        priority: 1000
+
+global_settings:
+  image_types:
+    cart_default:
+      width: 125
+      height: 125
+      scope: [products]
+    small_default:
+      width: 98
+      height: 98
+      scope: [products, categories, manufacturers, suppliers]
+    medium_default:
+      width: 452
+      height: 452
+      scope: [products, categories, manufacturers, suppliers]
+    large_default:
+      width: 800
+      height: 800
+      scope: [products]
+    home_default:
+      width: 250
+      height: 250
+      scope: [products]
+    category_default:
+      width: 141
+      height: 180
+      scope: [categories]
+
+  hooks:
+    custom_hooks:
+      - name: displayCustomHook
+        title: displayCustomHook
+        description: Add a custom hook
+    modules_to_hook:  
+      displayCustomHook:
+        - ets_whatsapp
