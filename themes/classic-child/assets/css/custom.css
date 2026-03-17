@@ -1,10 +1,11 @@
 h2{
-    color: red !important;
+   /*  color: red ; */
 }
 p{
-    color: gray !important;
+    color: gray ;
 }
-/*
+
 .btn{
-    color: yellow !important; 
-}*/
+    
+ /*   background-color: yellow ; */
+}
