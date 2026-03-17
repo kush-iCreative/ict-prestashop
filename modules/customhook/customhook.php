@@ -3,11 +3,11 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-class MyCustomModule extends Module
+class CustomHook extends Module
 {
     public function __construct()
     {
-        $this->name = 'mycustommodule'; // Technical name
+        $this->name = 'customhook'; // Technical name
         $this->tab = 'front_office_features'; // Admin section
         $this->version = '1.0.0';
         $this->author = 'Your Name';
@@ -16,7 +16,7 @@ class MyCustomModule extends Module
 
         parent::__construct();
 
-        $this->displayName = $this->l('My Custom Module');
+        $this->displayName = $this->l('Custom Hook');
         $this->description = $this->l('A short description of what this module does.');
 
         // Define compatibility for PrestaShop 9
@@ -25,15 +25,15 @@ class MyCustomModule extends Module
     public function install()
     {
         return parent::install()
-            && $this->registerHook('displayHome'); // Example: register a hook
+            && $this->registerHook('displayCustomHook'); // Example: register a hook
     }
-
+  
     public function uninstall()
     {
         return parent::uninstall();
     }
-    public function hookDisplayHome($params)
+    public function hookDisplayCustomHook($params)
     {
-        return '<div class="alert alert-info">Hello from my first PrestaShop 9 module!</div>';
+        return '<div class="alert alert-info">Hello from custom hook !</div>';
     }
 }

@@ -1,0 +1,10 @@
+{# views/PrestaShop/Admin/Common/Grid/Columns/Content/pdf_files.html.twig #}
+
+    <a href="{{ path('admin_pdf_invoice', {'pdf_files': record.pdf_files}) }}" target="_blank" class="btn btn-primary">
+        {{ 'Invoice'|trans({}, 'Admin.Global') }}
+    </a
+
+    <a href="{{ path('admin_pdf_delivery_slip', {'pdf_files': record.pdf_files}) }}" target="_blank" class="btn btn-info">
+        {{ 'Delivery Slip'|trans({}, 'Admin.Global') }}
+    </a>
+

@@ -70,27 +70,25 @@ class PromotionBanner extends Module
         $controller->addCSS(_MODULE_DIR_ . $this->name . '/views/css/style.css');
         $controller->addJS(_MODULE_DIR_ . $this->name . '/views/js/script.js');
     }
-
-
     public function getContent()
     {
         $output = '';
 
         if (Tools::isSubmit('submitBanner')) {
             if ($this->saveBanner()) {
-                $output .= $this->displayConfirmation($this->l('Banner saved successfully.'));
+                Tools::redirectAdmin(AdminController::$currentIndex . '&configure=' . $this->name);
             } else {
                 $output .= $this->displayError($this->l('Error saving banner.'));
             }
         }
+
         if (Tools::isSubmit('deletepromotion_banner')) {
             $id_banner = (int)Tools::getValue('id_banner');
             // dd($id_banner);
             if ($id_banner > 0) {
                 $res = Db::getInstance()->execute('DELETE FROM `' . _DB_PREFIX_ . 'promotion_banner` WHERE `id_banner` = ' . $id_banner);
-
                 if ($res) {
-                    $output .=  $this->displayConfirmation($this->l('Banner deleted successfully.'));
+                    Tools::redirectAdmin(AdminController::$currentIndex . '&configure=' . $this->name);
                 } else {
                     $output .=   $this->displayError($this->l('An error occurred while deleting the banner.'));
                 }
@@ -169,6 +167,7 @@ class PromotionBanner extends Module
             // Update the image field
             $banner->image = json_encode($imageNames);
         }
+
 
         return $banner->save();
     }

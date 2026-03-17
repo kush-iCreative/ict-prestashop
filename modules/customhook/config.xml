@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <module>
-    <name>mycustommodule</name>
-    <displayName><![CDATA[My Custom Module]]></displayName>
+    <name>customhook</name>
+    <displayName><![CDATA[Custom Hook]]></displayName>
     <version><![CDATA[1.0.0]]></version>
     <description><![CDATA[A short description of what this module does.]]></description>
     <author><![CDATA[Your Name]]></author>

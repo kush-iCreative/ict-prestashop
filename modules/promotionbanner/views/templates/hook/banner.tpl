@@ -1,7 +1,7 @@
 <!-- Swiper 7 Assets -->
 <link rel="stylesheet" href="https://unpkg.com/swiper@7/swiper-bundle.min.css"/>
 <script src="https://unpkg.com/swiper@7/swiper-bundle.min.js"></script>
-
+{if $banners}
 <div class="swiper" style="width:100%; height: 400px;"> {* Add a height for testing *}
     <div class="swiper-wrapper">
         {foreach from=$banners item=banner}
@@ -28,3 +28,4 @@
     <div class="swiper-button-next"></div>
     <div class="swiper-button-prev"></div>
 </div>
+{/if}
