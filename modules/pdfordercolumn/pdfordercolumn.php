@@ -3,14 +3,14 @@ if (!defined('_PS_VERSION_')) {
     exit;
 }
 
-use PrestaShop\PrestaShop\Core\Grid\Column\Type\DataColumn;
-use PrestaShop\PrestaShop\Core\Grid\Filter\Filter;
+//use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\DataColumn;
 use PrestaShop\PrestaShop\Core\Grid\Column\Type\Common\HtmlColumn;
-use PrestaShop\PrestaShop\Core\Grid\Data\GridData;
-use Symfony\Component\Form\Extension\Core\Type\TextType;
+use PrestaShop\PrestaShop\Core\Grid\Column\ColumnCollection;
 
-class PdfOrderColumn extends Module {
-    public function __construct() {
+class PdfOrderColumn extends Module
+{
+    public function __construct()
+    {
         $this->name = 'pdfordercolumn';
         $this->tab = 'administration';
         $this->version = '1.0.1';
@@ -21,58 +21,100 @@ class PdfOrderColumn extends Module {
         $this->description = $this->l('Adds PDF column with Invoice/Delivery links to order list.');
     }
 
-    public function install() {
-        return parent::install() &&
-            $this->registerHook('actionOrderGridDefinitionModifier') &&
-            $this->registerHook('actionOrderGridDataModifier'); // Changed hook
+    public function install()
+    {
+        return parent::install()
+            && $this->registerHook('actionOrderGridDefinitionModifier')
+            && $this->registerHook('actionOrderGridDataModifier');
     }
 
-    public function hookActionOrderGridDefinitionModifier(array $params) {
-        /** @var \PrestaShop\PrestaShop\Core\Grid\Definition\GridDefinitionInterface $definition */
-        $definition = $params['definition'];
 
-        // Add a new column using HtmlColumn to render links
-        $definition->getColumns()->addAfter(
+    public function hookActionOrderGridDefinitionModifier(array $params)
+    {
+
+        $columns = $params['definition']->getColumns();
+
+        $columns->addAfter(
             'osname',
-            (new HtmlColumn('order_pdf_links'))
-                ->setName($this->l('Documents'))
+            (new HtmlColumn('pdf_links'))
+                ->setName('PDF')
                 ->setOptions([
-                    'render' => function (array $record) {
-                        // $record contains the data processed by actionOrderGridDataModifier
-                        return $record['pdf_links'];
-                    }
+                    'field' => 'pdf_links',
                 ])
         );
     }
+    // public function hookActionOrderGridDataModifier(array $params)
+    // {
+    //     $data = $params['data'];
+    //     $records = $data->getRecords()->all();
 
-    // This hook fetches the links for each row
-    public function hookActionOrderGridDataModifier(array $params) {
-        $data = $params['data'];
-        /** @var \PrestaShop\PrestaShop\Core\Grid\Record\RecordCollection $records */
-        $records = $data->getRecords();
-        
-        $newRecords = [];
-        foreach ($records->all() as $record) {
-            $order = new Order((int)$record['id_order']);
-            
-            $links = '<div class="btn-group-action">';
-            
-            // Delivery Slip
-            if ($order->delivery_number) {
-                $links .= '<a href="' . $this->context->link->getAdminLink('AdminPdf', true, [], ['submitAction' => 'generateDeliverySlipPDF', 'id_order' => (int)$order->id]) . '" class="btn btn-default" title="' . $this->l('Download Delivery Slip') . '"><i class="material-icons">local_shipping</i></a>';
-            }
+    //     foreach ($records as &$record) {
+    //         $id_order = (int)$record['id_order'];
+    //         $deliverySlipLink = $this->context->link->getAdminLink(
+    //             'AdminPdf',
+    //             true,
+    //             [],
+    //             [
+    //                 'submitAction' => 'generateDeliverySlipPDF',
+    //                 'id_order' => $id_order,
+    //             ]
+    //         );
 
-            // Credit Slip
-            if ($order->invoice_number) {
-                $links .= '<a href="' . $this->context->link->getAdminLink('AdminPdf', true, [], ['submitAction' => 'generateInvoicePDF', 'id_order' => (int)$order->id]) . '" class="btn btn-default" title="' . $this->l('Download Invoice') . '"><i class="material-icons">description</i></a>';
-            }
-            
-            $links .= '</div>';
-            
-            $record['pdf_links'] = $links;
-            $newRecords[] = $record;
+    //         $creditSlipLink = $this->context->link->getAdminLink(
+    //             'AdminPdf',
+    //             true,
+    //             [],
+    //             [
+    //                 'submitAction' => 'generateCreditSlipPDF',
+    //                 'id_order' => $id_order,
+    //             ]
+    //         );
+
+    //         $record['pdf_links'] = '
+    //         <a href="' . $deliverySlipLink . '" target="_blank">Delivery Slip</a><br>
+    //         <a href="' . $creditSlipLink . '" target="_blank">Credit Slip</a>
+    //     ';
+    //     }
+
+    //     $params['data']->setRecords($records);
+    // }
+
+    public function hookActionOrderGridDataModifier(array $params)
+    {
+        $gridData = $params['data'];
+        $records = $gridData->getRecords()->all();
+
+        foreach ($records as &$record) {
+            $id_order = (int) $record['id_order'];
+
+            $invoiceLink = $this->context->link->getAdminLink('AdminPdf', true, [], [
+                // 'submitAction' => 'generateInvoicePDF',
+                // 'id_order' => $id_order,
+                'route' => 'admin_orders_generate_invoice_pdf',
+                'route_param_name' => 'orderId',
+                'route_param_field' => $id_order,
+            ]);
+
+            $deliverySlipLink = $this->context->link->getAdminLink('AdminPdf', true, [], [
+                'submitAction' => 'generateDeliverySlipPDF',
+                'id_order' => $id_order
+            ]);
+
+            $record['pdf_links'] = '
+            <a href="' . $invoiceLink . '" target="_blank" title="Invoice">
+                <i class="material-icons">receipt</i>
+            </a>
+            <a href="' . $deliverySlipLink . '" target="_blank" title="Delivery Slip">
+                <i class="material-icons">local_shipping</i>
+            </a>';
         }
 
-        $records->set($newRecords);
+        // Wrap and return the modified data
+        $modifiedRecords = new \PrestaShop\PrestaShop\Core\Grid\Record\RecordCollection($records);
+        $params['data'] = new \PrestaShop\PrestaShop\Core\Grid\Data\GridData(
+            $modifiedRecords,
+            $gridData->getRecordsTotal(),
+            $gridData->getQuery()
+        );
     }
 }
