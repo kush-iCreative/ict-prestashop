@@ -88,28 +88,23 @@ class PdfOrderColumn extends Module
             $id_order = (int) $record['id_order'];
 
             $invoiceLink = $this->context->link->getAdminLink('AdminPdf', true, [], [
-                // 'submitAction' => 'generateInvoicePDF',
-                // 'id_order' => $id_order,
-                'route' => 'admin_orders_generate_invoice_pdf',
-                'route_param_name' => 'orderId',
-                'route_param_field' => $id_order,
+                'submitAction' => 'generateInvoicePdf',
+                'id_order' => $id_order,
             ]);
 
             $deliverySlipLink = $this->context->link->getAdminLink('AdminPdf', true, [], [
                 'submitAction' => 'generateDeliverySlipPDF',
-                'id_order' => $id_order
+                'id_order' => $id_order,
             ]);
 
             $record['pdf_links'] = '
-            <a href="' . $invoiceLink . '" target="_blank" title="Invoice">
-                <i class="material-icons">receipt</i>
-            </a>
-            <a href="' . $deliverySlipLink . '" target="_blank" title="Delivery Slip">
-                <i class="material-icons">local_shipping</i>
-            </a>';
+        <a href="' . $invoiceLink . '" target="_blank" onclick="event.preventDefault();" title="Invoice">
+            <i class="material-icons">receipt</i>
+        </a>
+        <a href="' . $deliverySlipLink . '" target="_blank" onclick="event.preventDefault();" title="Delivery Slip">
+            <i class="material-icons">local_shipping</i>
+        </a>';
         }
-
-        // Wrap and return the modified data
         $modifiedRecords = new \PrestaShop\PrestaShop\Core\Grid\Record\RecordCollection($records);
         $params['data'] = new \PrestaShop\PrestaShop\Core\Grid\Data\GridData(
             $modifiedRecords,
